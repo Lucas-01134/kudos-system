@@ -19,6 +19,8 @@ export default function ProfilePage() {
     bio: ''
   });
 
+  const userId = user?._id || user?.id;
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -38,7 +40,7 @@ export default function ProfilePage() {
       const [received, sent, kudosStats] = await Promise.all([
         kudosAPI.getReceivedKudos(1, 5),
         kudosAPI.getSentKudos(1, 5),
-        kudosAPI.getKudosStats(user._id)
+        kudosAPI.getKudosStats(userId)
       ]);
       setReceivedKudos(received.data.kudos);
       setSentKudos(sent.data.kudos);

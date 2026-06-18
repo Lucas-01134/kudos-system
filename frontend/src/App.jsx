@@ -17,15 +17,17 @@ function AppContent() {
   return (
     <Router>
       <Navbar />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/feed" element={<FeedPage />} />
-        <Route path="/send-kudos" element={<SendKudosPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      <main className="pt-6">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/feed" element={<FeedPage />} />
+          <Route path="/send-kudos" element={<SendKudosPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </main>
     </Router>
   );
 }

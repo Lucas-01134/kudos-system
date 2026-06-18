@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext';
 
 export default function KudosCard({ kudos, onUpdate }) {
   const { user } = useAuth();
+  const currentUserId = user?._id || user?.id;
   const [loading, setLoading] = useState(false);
-  const [isLiked, setIsLiked] = useState(kudos.likes?.includes(user?._id));
+  const [isLiked, setIsLiked] = useState(kudos.likes?.includes(currentUserId));
 
   const handleLike = async () => {
     try {
@@ -51,11 +52,16 @@ export default function KudosCard({ kudos, onUpdate }) {
             {' '}→{' '}
             <span className="font-semibold">{kudos.to.firstName || kudos.to.username}</span>
           </div>
-          <span className="inline-block mt-1 px-2 py-1 bg-gray-100 rounded text-sm">
-            {categoryEmoji[kudos.category]} {kudos.category}
-          </span>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-sm">
+              {categoryEmoji[kudos.category]} {kudos.category}
+            </span>
+            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm ${kudos.isPublic ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+              {kudos.isPublic ? '🌐 Public' : '🔒 Private'}
+            </span>
+          </div>
         </div>
-        {user?._id === kudos.from._id && (
+        {currentUserId === kudos.from._id && (
           <button
             onClick={handleDelete}
             disabled={loading}

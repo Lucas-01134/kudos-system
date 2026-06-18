@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { kudosAPI } from '../utils/api';
+import { kudosAPI, authAPI } from '../utils/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function SendKudosPage() {
@@ -17,6 +17,12 @@ export default function SendKudosPage() {
   const [success, setSuccess] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const currentUserId = String(user?._id || user?.id || '');
+  const currentUserIds = new Set([
+    currentUserId,
+    String(user?.username || '').toLowerCase(),
+    String(user?.email || '').toLowerCase()
+  ]);
 
   useEffect(() => {
     if (!user) {
@@ -24,15 +30,47 @@ export default function SendKudosPage() {
       return;
     }
     fetchUsers();
-  }, [user, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const fetchUsers = async () => {
     try {
-      const response = await kudosAPI.getReceivedKudos().catch(() => ({ data: { kudos: [] } }));
-      // For now, we'll just set empty users list - in production, get from auth API
-      setUsers([]);
+      const response = await authAPI.getAllUsers();
+      const normalizedUsers = response.data.map((u) => ({
+        ...u,
+        _id: String(u._id || u.id || ''),
+        id: String(u.id || u._id || ''),
+        username: String(u.username || ''),
+        email: String(u.email || '')
+      }));
+
+      const filtered = normalizedUsers.filter((u) => {
+        const userId = u.id;
+        const username = u.username.toLowerCase();
+        const email = u.email.toLowerCase();
+        return (
+          !currentUserIds.has(userId) &&
+          !currentUserIds.has(username) &&
+          !currentUserIds.has(email)
+        );
+      });
+
+      console.log('SendKudosPage fetchUsers', {
+        currentUserIds: Array.from(currentUserIds),
+        allUsers: normalizedUsers.map((u) => ({ id: u.id, username: u.username, email: u.email })),
+        filtered: filtered.map((u) => ({ id: u.id, username: u.username }))
+      });
+
+      setUsers(filtered);
+      if (filtered.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          to: prev.to || filtered[0].id
+        }));
+      }
     } catch (err) {
       console.error('Error fetching users:', err);
+      setUsers([]);
     }
   };
 
@@ -51,6 +89,7 @@ export default function SendKudosPage() {
     setSuccess('');
 
     try {
+      console.log('SendKudosPage submit', { currentUserId, to: formData.to, message: formData.message });
       await kudosAPI.sendKudos(
         formData.to,
         formData.message,
@@ -61,7 +100,8 @@ export default function SendKudosPage() {
       setFormData({ to: '', message: '', category: 'other', isPublic: true });
       setTimeout(() => navigate('/feed'), 1500);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send kudos');
+      console.error('SendKudosPage send error', err);
+      setError(err.response?.data?.message || err.message || 'Failed to send kudos');
     } finally {
       setLoading(false);
     }
@@ -80,16 +120,37 @@ export default function SendKudosPage() {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2">Recipient</label>
-            <input
-              type="text"
-              name="to"
-              placeholder="Enter recipient ID or username"
-              value={formData.to}
-              onChange={handleChange}
-              className="input"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">Use the recipient's user ID</p>
+            {users.length > 0 ? (
+              <select
+                name="to"
+                value={formData.to}
+                onChange={handleChange}
+                className="input"
+                required
+              >
+                {users.map((recipient) => {
+                  const recipientId = String(recipient._id || recipient.id || '');
+                  return (
+                    <option key={recipientId} value={recipientId}>
+                      {recipient.username} ({recipient.firstName} {recipient.lastName})
+                    </option>
+                  );
+                })}
+              </select>
+            ) : (
+              <input
+                type="text"
+                name="to"
+                placeholder="Enter recipient user ID, username, or email"
+                value={formData.to}
+                onChange={handleChange}
+                className="input"
+                required
+              />
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Select a recipient from the list or enter a valid username/email/user ID.
+            </p>
           </div>
 
           <div className="mb-4">
@@ -127,6 +188,14 @@ export default function SendKudosPage() {
               />
               <span className="text-sm font-medium">Make this kudos public</span>
             </label>
+            <p className="text-xs text-gray-500 mt-2">
+              Uncheck to send this kudos privately. Private kudos are shown in the feed only with a private marker.
+            </p>
+            {!formData.isPublic && (
+              <div className="mt-2 text-sm text-yellow-800 bg-yellow-100 p-2 rounded">
+                This kudos will be private and only visible to you and the recipient.
+              </div>
+            )}
           </div>
 
           <button type="submit" className="btn btn-primary w-full">

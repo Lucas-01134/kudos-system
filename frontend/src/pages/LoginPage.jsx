@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -20,7 +20,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await login(formData.email, formData.password);
+      await login(formData.identifier, formData.password);
       navigate('/feed');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
@@ -39,13 +39,14 @@ export default function LoginPage() {
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Email</label>
+            <label className="block text-sm font-medium mb-2">Email or Username</label>
             <input
-              type="email"
-              name="email"
-              value={formData.email}
+              type="text"
+              name="identifier"
+              value={formData.identifier}
               onChange={handleChange}
               className="input"
+              placeholder="Email or username"
               required
             />
           </div>

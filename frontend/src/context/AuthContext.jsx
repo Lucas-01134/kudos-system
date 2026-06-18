@@ -8,6 +8,15 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const normalizeUser = (userData) => {
+    if (!userData) return null;
+    return {
+      ...userData,
+      _id: userData._id || userData.id,
+      id: userData.id || userData._id,
+    };
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -20,7 +29,7 @@ export const AuthProvider = ({ children }) => {
   const fetchProfile = async () => {
     try {
       const response = await authAPI.getProfile();
-      setUser(response.data);
+      setUser(normalizeUser(response.data));
       setError(null);
     } catch (err) {
       localStorage.removeItem('token');
@@ -34,7 +43,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.register(username, email, password, firstName, lastName);
       localStorage.setItem('token', response.data.token);
-      setUser(response.data.user);
+      setUser(normalizeUser(response.data.user));
       setError(null);
       return response.data;
     } catch (err) {
@@ -43,11 +52,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (identifier, password) => {
     try {
-      const response = await authAPI.login(email, password);
+      const response = await authAPI.login(identifier, password);
       localStorage.setItem('token', response.data.token);
-      setUser(response.data.user);
+      setUser(normalizeUser(response.data.user));
       setError(null);
       return response.data;
     } catch (err) {

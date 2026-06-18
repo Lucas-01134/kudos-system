@@ -6,17 +6,19 @@ import {
   getKudosFeed,
   likeKudos,
   deleteKudos,
-  getKudosStats
+  getKudosStats,
+  setKudosVisibility
 } from '../controllers/kudosController.js';
-import { auth } from '../middleware/auth.js';
+import { auth, optional, admin } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router.post('/send', auth, sendKudos);
 router.get('/received', auth, getReceivedKudos);
 router.get('/sent', auth, getSentKudos);
-router.get('/feed', getKudosFeed);
+router.get('/feed', optional, getKudosFeed);
 router.post('/:id/like', auth, likeKudos);
+router.patch('/:id/visibility', auth, admin, setKudosVisibility);
 router.delete('/:id', auth, deleteKudos);
 router.get('/stats/:id', getKudosStats);
 

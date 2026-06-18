@@ -11,6 +11,7 @@ A full-stack web application for recognizing and celebrating team achievements w
 - **Profile Management**: View stats and manage your profile
 - **Categories**: Organize kudos by type (leadership, teamwork, innovation, support, excellence)
 - **Privacy Control**: Make kudos public or private
+- **Moderation Controls**: Administrators can hide or delete inappropriate kudos
 
 ## Tech Stack
 
@@ -203,6 +204,7 @@ The project follows standard JavaScript conventions. Consider adding ESLint and 
 - `message` (String)
 - `category` (String: leadership, teamwork, innovation, support, excellence, other)
 - `isPublic` (Boolean)
+- `isVisible` (Boolean, default: true)
 - `likes` (Array of ObjectIds)
 - `createdAt`, `updatedAt` (Date)
 

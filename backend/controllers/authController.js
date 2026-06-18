@@ -48,13 +48,15 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide email and password' });
+    if (!identifier || !password) {
+      return res.status(400).json({ message: 'Please provide username/email and password' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      $or: [{ email: identifier }, { username: identifier }]
+    });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -109,8 +111,10 @@ export const getUserById = async (req, res) => {
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
+    console.log('getAllUsers', { count: users.length, users: users.map((u) => ({ id: u._id, username: u.username, email: u.email })) });
     res.json(users);
   } catch (error) {
+    console.error('getAllUsers error', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -131,6 +135,44 @@ export const updateProfile = async (req, res) => {
     ).select('-password');
 
     res.json({ message: 'Profile updated', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const setAdminStatus = async (req, res) => {
+  try {
+    const { isAdmin } = req.body;
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const existingAdmin = await User.findOne({ isAdmin: true });
+    const isSelfPromotion = targetUser._id.toString() === req.userId;
+
+    if (existingAdmin) {
+      if (!existingAdmin._id.equals(req.userId)) {
+        return res.status(403).json({ message: 'Admin access required to change admin status' });
+      }
+    } else {
+      if (!isSelfPromotion) {
+        return res.status(403).json({ message: 'The first admin must promote themselves' });
+      }
+    }
+
+    targetUser.isAdmin = isAdmin !== undefined ? isAdmin : true;
+    await targetUser.save();
+
+    res.json({
+      message: 'Admin status updated',
+      user: {
+        id: targetUser._id,
+        username: targetUser.username,
+        email: targetUser.email,
+        isAdmin: targetUser.isAdmin
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
